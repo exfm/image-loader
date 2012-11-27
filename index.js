@@ -37,13 +37,17 @@ ImageLoader.prototype.getImage = function(){
     this.xhr = new XMLHttpRequest();
     this.xhr.open('GET', this.url, true);
     this.xhr.responseType = 'arraybuffer';
-    this.xhr.addEventListener('load', this.onLoad.bind(this));
+    this.bindedOnLoad = this.onLoad.bind(this);
+    this.bindedOnError = this.onError.bind(this);
+    this.xhr.addEventListener('load', this.bindedOnLoad);
+    this.xhr.addEventListener('error', this.bindedOnError);
     this.xhr.send();
 }
 
 // when the image has loaded, set it
 ImageLoader.prototype.onLoad = function(e){
-    if (this.xhr.status == 200) {
+    this.xhr.removeEventListener('load', this.bindedOnLoad);
+    if(this.xhr.status == 200){
         var blob = new Blob(
             [this.xhr.response], 
             {
@@ -51,16 +55,38 @@ ImageLoader.prototype.onLoad = function(e){
             }
         );
         var src = this.createObjectURL(blob);
-        if(this.background === true){
-            this.el.css('backgroundImage', 'url('+src+')');
-        }
-        else{
-            this.el.attr('src', src);
-        }
-        if(this.showClass){
-            this.el.addClass(this.showClass);
-        }
+        this.show(src);
         setTimeout(this.revokeObjectURL.bind(this), 5000);
+    }
+}
+
+// error in xhr
+ImageLoader.prototype.onError = function(e){
+    this.xhr.removeEventListener('error', this.bindedOnError);
+    if(this.xhr.status === 0){
+        this.imageObject = new Image();
+        this.bindedOnImageObjectLoad = this.onImageObjectLoad.bind(this);
+        this.imageObject.addEventListener('load', this.bindedOnImageObjectLoad);
+        this.imageObject.src = this.url;
+    }
+}
+
+// image object loaded
+ImageLoader.prototype.onImageObjectLoad = function(e){
+    this.imageObject.removeEventListener('load', this.bindedOnImageObjectLoad);
+    this.show(this.url);
+}
+
+// show the image
+ImageLoader.prototype.show = function(src){
+    if(this.background === true){
+        this.el.css('backgroundImage', 'url('+src+')');
+    }
+    else{
+        this.el.attr('src', src);
+    }
+    if(this.showClass){
+        this.el.addClass(this.showClass);
     }
 }
 
