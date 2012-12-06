@@ -3,19 +3,22 @@
 "use strict";
 
 function ImageLoader(selector, url, opts){
-     
-    // set image on background (set to false for image elements)
-    this.background = true; 
+    
+    if(url){ 
+    
+        // set image on background (set to false for image elements)
+        this.background = true; 
+            
+        $.extend(this, opts);
         
-    $.extend(this, opts);
-    
-    // the element we will set the image on
-    this.el = $(selector);
-    
-    // the url of the remote image we want to load
-    this.url = url;
-    
-    this.getImage();
+        // the element we will set the image on
+        this.el = $(selector);
+        
+        // the url of the remote image we want to load
+        this.url = url;
+        
+        this.getImage();
+    }
 }
 
 // create an objectURL from the blob
@@ -34,14 +37,19 @@ ImageLoader.prototype.revokeObjectURL = function(blob){
 
 // load the remote image using XHR2
 ImageLoader.prototype.getImage = function(){
-    this.xhr = new XMLHttpRequest();
-    this.xhr.open('GET', this.url, true);
-    this.xhr.responseType = 'arraybuffer';
-    this.bindedOnLoad = this.onLoad.bind(this);
-    this.bindedOnError = this.onError.bind(this);
-    this.xhr.addEventListener('load', this.bindedOnLoad);
-    this.xhr.addEventListener('error', this.bindedOnError);
-    this.xhr.send();
+    if(this.url.indexOf('data:image') === -1){
+        this.xhr = new XMLHttpRequest();
+        this.xhr.open('GET', this.url, true);
+        this.xhr.responseType = 'arraybuffer';
+        this.bindedOnLoad = this.onLoad.bind(this);
+        this.bindedOnError = this.onError.bind(this);
+        this.xhr.addEventListener('load', this.bindedOnLoad);
+        this.xhr.addEventListener('error', this.bindedOnError);
+        this.xhr.send();
+    }
+    else{
+        this.show(this.url);
+    }
 }
 
 // when the image has loaded, set it
