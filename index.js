@@ -11,6 +11,14 @@ function ImageLoader(selector, url, opts){
             
         $.extend(this, opts);
         
+        this.hasAllFeatures = true;
+        if(!window.Blob){
+            this.hasAllFeatures = false;
+        };
+        if(!window.URL && !window.webkitURL){
+            this.hasAllFeatures = false;
+        };
+        
         // the element we will set the image on
         this.el = $(selector);
         
@@ -37,7 +45,8 @@ ImageLoader.prototype.revokeObjectURL = function(blob){
 
 // load the remote image using XHR2
 ImageLoader.prototype.getImage = function(){
-    if(this.url.indexOf('data:image') === -1){
+    if(this.url.indexOf('data:image') === -1
+        && this.hasAllFeatures === true){
         this.xhr = new XMLHttpRequest();
         this.xhr.open('GET', this.url, true);
         this.xhr.responseType = 'arraybuffer';
@@ -55,6 +64,7 @@ ImageLoader.prototype.getImage = function(){
 // when the image has loaded, set it
 ImageLoader.prototype.onLoad = function(e){
     this.xhr.removeEventListener('load', this.bindedOnLoad);
+    this.xhr.removeEventListener('error', this.bindedOnError);
     if(this.xhr.status == 200){
         var blob = new Blob(
             [this.xhr.response], 
@@ -70,6 +80,7 @@ ImageLoader.prototype.onLoad = function(e){
 
 // error in xhr
 ImageLoader.prototype.onError = function(e){
+    this.xhr.removeEventListener('load', this.bindedOnLoad);
     this.xhr.removeEventListener('error', this.bindedOnError);
     if(this.xhr.status === 0){
         this.imageObject = new Image();
@@ -88,13 +99,36 @@ ImageLoader.prototype.onImageObjectLoad = function(e){
 // show the image
 ImageLoader.prototype.show = function(src){
     if(this.background === true){
-        this.el.css('backgroundImage', 'url('+src+')');
+        this.requestAnimationFrame(
+            function(){
+                this.el.css('backgroundImage', 'url('+src+')');
+                if(this.showClass){
+                    this.el.addClass(this.showClass);
+                }
+            }
+        );  
     }
     else{
-        this.el.attr('src', src);
+        this.requestAnimationFrame(
+            function(){
+                this.el.attr('src', src);
+                if(this.showClass){
+                    this.el.addClass(this.showClass);
+                }
+            }
+        );
     }
-    if(this.showClass){
-        this.el.addClass(this.showClass);
+}
+
+ImageLoader.prototype.requestAnimationFrame = function(func){
+    var rAF = window.requestAnimationFrame || 
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame;
+    if(rAF){
+        rAF($.proxy(func, this));
+    }
+    else{
+        func.call(this);
     }
 }
 
