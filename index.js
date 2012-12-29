@@ -69,7 +69,7 @@ ImageLoader.prototype.onLoad = function(e){
         var blob = new Blob(
             [this.xhr.response], 
             {
-                'type': 'image/jpg'
+                'type': 'image/jpeg'
             }
         );
         var src = this.createObjectURL(blob);
